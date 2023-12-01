@@ -1,8 +1,6 @@
 from PIL import Image
 import pandas as pd
 import time
-import os
-import requests
 from datasets import load_dataset
 from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 
@@ -35,6 +33,7 @@ if __name__ == '__main__':
 
     count_true_train = 0
     count_false_train = 0
+    counter = 1
 
     # for 'train' data
     # item -> {'image': _, 'label': _}
@@ -49,22 +48,29 @@ if __name__ == '__main__':
         outputs = model(**inputs)
         logits_per_image = outputs.logits_per_image
         probs = logits_per_image.softmax(dim=1)
+        lprobs = probs.detach().numpy().tolist()[0]
 
-        lprobs = probs.detach().numpy().tolist()
-
-        if lprobs.index(max(probs)) == item['label']:
+        if lprobs.index(max(lprobs)) == item['label']:
             count_true_train += 1
         else:
             count_false_train += 1
 
-        # print(outputs)
-        # print(logits_per_image)
-        # print(probs.detach().numpy()[0])
+        if counter == 100:
+            ptp(st, f'next 100 images parsed\n'
+                    f'true: {count_true_train}\n'
+                    f'false: {count_false_train}\n'
+                    f'accuracy: {count_true_train / (count_true_train + count_false_train)}\ntime:')
+            counter = 1
+        else:
+            counter += 1
 
         pass
 
+    ptp(st, "complete 'train' data")
+
     count_true_validation = 0
     count_false_validation = 0
+    counter = 1
 
     # for 'validation' data
     # item -> {'image': _, 'label': _}
@@ -79,53 +85,35 @@ if __name__ == '__main__':
         outputs = model(**inputs)
         logits_per_image = outputs.logits_per_image
         probs = logits_per_image.softmax(dim=1)
+        lprobs = probs.detach().numpy().tolist()[0]
 
-        lprobs = probs.detach().numpy().tolist()
-
-        if lprobs.index(max(probs)) == item['label']:
-            count_true_train += 1
+        if lprobs.index(max(lprobs)) == item['label']:
+            count_true_validation += 1
         else:
-            count_false_train += 1
+            count_false_validation += 1
+
+        if counter == 100:
+            ptp(st, f'next 100 images parsed\n'
+                    f'true: {count_true_validation}\n'
+                    f'false: {count_false_validation}\n'
+                    f'accuracy: {count_true_validation / (count_true_validation + count_false_validation)}\ntime:')
+            counter = 1
+        else:
+            counter += 1
+
         pass
 
-    # print(len(dataset['train']))
-    #
-    # print("Time: ", time.time() - tm)
-    #im =
-    # dataset['train'][0]['image'].save('image.jpeg', format='jpeg')
-    # print("Time: ", time.time() - tm)
-    # print("Image")
-    # print("Time: ", time.time() - tm)
-    # print(im)
+    ptp(st, "complete 'validation' data")
 
-    # im.save('image.jpeg', format='jpeg')
+    print("#" * 50)
+    print(f"Simple accuracy of train data: {count_true_train / len(dataset['train'])}")
+    print(f"count_true_train:", count_true_train)
+    print(f"count_false_train:", count_false_train)
 
-    # print(dataset.column_names)
-    # print(_NAMES[dataset['train'][987].get('label')])
-
-    # print(dataset.class_encode_column('label') )
-    # print(type(dataset))
-
-
-
-    # url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-    # image = Image.open(requests.get(url, stream=True).raw)
-
-    # inputs = processor(
-    #     text=["dog", "cat", "tiger"],
-    #     images=image,
-    #     return_tensors="pt",
-    #     padding=True
-    # )
-
-    # outputs = model(**inputs)
-    # logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
-    # probs = logits_per_image.softmax(dim=1)  # we can take the softmax to get the label probabilities
-
-    # print(outputs)
-    # print(logits_per_image)
-    # print(probs.detach().numpy()[0])
-
+    print("#" * 50)
+    print(f"Simple accuracy of validation data: {count_true_validation / len(dataset['validation'])}")
+    print(f"count_true_validation:", count_true_validation)
+    print(f"count_false_validation:", count_false_validation)
 
     pass
 
