@@ -3,28 +3,8 @@ import time
 import tensorflow as tf
 import os
 import multiprocessing
-# import sys
-# import threading
-
-# class ReturnValueThread(threading.Thread):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.result = None
-#
-#     def run(self):
-#         if self._target is None:
-#             return  # could alternatively raise an exception, depends on the use case
-#         try:
-#             self.result = self._target(*self._args, **self._kwargs)
-#         except Exception as exc:
-#             print(f'{type(exc).__name__}: {exc}', file=sys.stderr)  # properly handle the exception
-#
-#     def join(self, *args, **kwargs):
-#         super().join(*args, **kwargs)
-#         return self.result
 
 cpus = multiprocessing.cpu_count()
-
 num_threads = cpus * 2
 os.environ["OMP_NUM_THREADS"] = str(cpus * 2)
 os.environ["TF_NUM_INTRAOP_THREADS"] = str(cpus * 2)
@@ -38,7 +18,6 @@ tf.config.threading.set_intra_op_parallelism_threads(
 )
 tf.config.set_soft_device_placement(True)
 
-# from PIL import Image
 from datasets import load_dataset
 from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 
@@ -72,6 +51,7 @@ def slave(dataset, names, start_time, processor, model):
         logits_per_image = outputs.logits_per_image
         lprobs = logits_per_image.softmax(dim=1).detach().numpy().tolist()[0]
 
+        # check metrics
         if lprobs.index(max(lprobs)) == item['label']:
             count_trues += 1
         else:
@@ -85,47 +65,6 @@ def slave(dataset, names, start_time, processor, model):
             counter = 1
         else:
             counter += 1
-
-        # code for 2 threads
-        # if items[0] == None:
-        #     items[0] = item
-        # else:
-        #     items[1] = item
-        #     outputs_0 = ReturnValueThread(target=work_ai, args=(names, items[0], processor, model))
-        #     outputs_1 = ReturnValueThread(target=work_ai, args=(names, items[1], processor, model))
-        #
-        #     outputs_0.start()
-        #     outputs_1.start()
-        #
-        #     logits_per_image_0 = outputs_0.join().logits_per_image
-        #     logits_per_image_1 = outputs_1.join().logits_per_image
-        #
-        #     probs_0 = logits_per_image_0.softmax(dim=1)
-        #     probs_1 = logits_per_image_1.softmax(dim=1)
-        #     lprobs_0 = probs_0.detach().numpy().tolist()[0]
-        #     lprobs_1 = probs_1.detach().numpy().tolist()[0]
-        #
-        #     if lprobs_0.index(max(lprobs_0)) == items[0]['label']:
-        #         count_trues += 1
-        #     else:
-        #         count_falses += 1
-        #
-        #     if lprobs_1.index(max(lprobs_1)) == items[1]['label']:
-        #         count_trues += 1
-        #     else:
-        #         count_falses += 1
-        #
-        #     if counter == 100:
-        #         ptp(start_time, f'next 100 images parsed\n'
-        #                 f'true: {count_trues}\n'
-        #                 f'false: {count_falses}\n'
-        #                 f'accuracy: {count_trues / (count_trues + count_falses)}\ntime:')
-        #         counter = 2
-        #     else:
-        #         counter += 2
-        #
-        #     items[0] = None
-        #     items[1] = None
 
         # end for
         pass
