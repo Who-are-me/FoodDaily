@@ -5,10 +5,11 @@ import os
 import multiprocessing
 
 cpus = multiprocessing.cpu_count()
-num_threads = cpus * 2
-os.environ["OMP_NUM_THREADS"] = str(cpus * 2)
-os.environ["TF_NUM_INTRAOP_THREADS"] = str(cpus * 2)
-os.environ["TF_NUM_INTEROP_THREADS"] = str(cpus * 2)
+_ml = 1
+num_threads = cpus * _ml
+os.environ["OMP_NUM_THREADS"] = str(cpus * _ml)
+os.environ["TF_NUM_INTRAOP_THREADS"] = str(cpus * _ml)
+os.environ["TF_NUM_INTEROP_THREADS"] = str(cpus * _ml)
 
 tf.config.threading.set_inter_op_parallelism_threads(
     num_threads
@@ -42,7 +43,6 @@ def slave(dataset, names, start_time, processor, model):
     count_trues = 0
     count_falses = 0
     counter = 1
-    # items = [None, None]
 
     # TODO fix this bad code
     # item -> {'image': _, 'label': _}
@@ -57,8 +57,8 @@ def slave(dataset, names, start_time, processor, model):
         else:
             count_falses += 1
 
-        if counter == 100:
-            ptp(start_time, f'next 100 images parsed\n'
+        if counter >= 100:
+            ptp(start_time, f'next {counter} images parsed\n'
                             f'true: {count_trues}\n'
                             f'false: {count_falses}\n'
                             f'accuracy: {count_trues / (count_trues + count_falses)}\ntime:')
