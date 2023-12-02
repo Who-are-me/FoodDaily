@@ -14,7 +14,7 @@ axs[0][0].set_title("Accuracy")
 axs[0][1].scatter(csv_data['item'], csv_data['precision'])
 axs[0][1].set_title("Precision")
 
-axs[0][2].scatter(csv_data['item'], csv_data['recall'])
+axs[0][2].plot(csv_data['item'], csv_data['recall'])
 axs[0][2].set_title("Recall")
 
 axs[1][0].scatter(csv_data['item'], csv_data['f0'])
@@ -29,7 +29,7 @@ recall = 55564 / (55564 + 0)
 f0 = (precision * recall) / recall
 
 axs[1][2].bar(np.array(['Accuracy', 'Precision', 'Recall', 'F(0)']), np.array([accuracy, precision, recall, f0]))
-axs[1][2].set_title("Accuracy while run-time")
+axs[1][2].set_title("Final result")
 
 # for ax in axs.flat:
 #     ax.label_outer()
