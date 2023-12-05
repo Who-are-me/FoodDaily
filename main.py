@@ -21,11 +21,12 @@ tf.config.set_soft_device_placement(True)
 
 from datasets import load_dataset
 from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
+from sklearn.metrics import classification_report
 
 
 # print time of program
 def ptp(start_time, msg: str = ''):
-    print("Time:", msg, time.time() - start_time)
+    print("Info:", msg, time.time() - start_time)
 
 
 def work_ai(names, item, processor, model):
@@ -36,33 +37,52 @@ def work_ai(names, item, processor, model):
         padding=True
     )
 
-    return model(**inputs)
+    return model(**inputs).logits_per_image
 
 
-def slave(dataset, names, start_time, processor, model):
+def slave_ai(dataset, names, start_time, processor, model, chunk = 100):
     count_trues = 0
     count_falses = 0
     counter = 1
+    y_true = list()
+    y_pred = list()
+    image_number = 0
+
+    file_true = open('true.csv', 'a+')
+
+    # FIXME check
+    if not os.path.exists('true.csv'):
+        file_true.write('item,' + ','.join(str(x) for x in range(chunk)) + '\n')
+
+    file_pred = open('pred.csv', 'a+')
+
+    # FIXME check
+    if not os.path.exists('pred.csv'):
+        file_pred.write('item,' + ','.join(str(x) for x in range(chunk)) + '\n')
 
     # TODO fix this bad code
     # item -> {'image': _, 'label': _}
     for item in dataset:
-        outputs = work_ai(names, item, processor, model)
-        logits_per_image = outputs.logits_per_image
+        logits_per_image = work_ai(names, item, processor, model)
         lprobs = logits_per_image.softmax(dim=1).detach().numpy().tolist()[0]
 
         # check metrics
-        if lprobs.index(max(lprobs)) == item['label']:
-            count_trues += 1
-        else:
-            count_falses += 1
+        y_true.append(names[item['label']])
+        y_pred.append(names[lprobs.index(max(lprobs))])
 
-        if counter >= 100:
-            ptp(start_time, f'next {counter} images parsed\n'
-                            f'true: {count_trues}\n'
-                            f'false: {count_falses}\n'
-                            f'accuracy: {count_trues / (count_trues + count_falses)}\ntime:')
+        # print massage of next 100 images parsed
+        if counter >= chunk:
+            ptp(start_time, f'next {counter} images parsed\ntime:')
+            image_number += 1
+
+            # save metrics to file by chunk
+            file_true.write(f'{image_number},' + ','.join(str(x) for x in y_true) + '\n')
+            file_pred.write(f'{image_number},' + ','.join(str(x) for x in y_pred) + '\n')
+
+            y_true = []
+            y_pred = []
             counter = 1
+            break
         else:
             counter += 1
 
@@ -71,7 +91,7 @@ def slave(dataset, names, start_time, processor, model):
 
     ptp(st, "complete data")
 
-    return count_trues, count_falses, count_trues / (count_trues + count_falses)
+    return y_true, y_pred
 
 
 if __name__ == '__main__':
@@ -96,12 +116,34 @@ if __name__ == '__main__':
 
     len_of_dataset = len(dataset['train'])
 
-    count_trues, count_falses, accuracy = slave(dataset['train'], names, st, processor, model)
+    with open('metrics.csv', 'a+') as file:
+        file.write('class,accuracy,precision,recall,f0\n')
+
+    slave_ai(dataset['train'], names, st, processor, model, chunk=101)
+
+    y_true = list()
+    y_pred = list()
+
+    df_true = pd.read_csv('true.csv')
+    df_pred = pd.read_csv('pred.csv')
+
+    for ind in df_true.index:
+        y_true.extend(df_true.iloc[ind, df_true.columns != 'item'].values.tolist())
+
+    for ind in df_pred.index:
+        y_pred.extend(df_pred.iloc[ind, df_pred.columns != 'item'].values.tolist())
+
+    # print(y_true)
+    # print(y_pred)
+    # print("#" * 50)
+    # print(len(y_true))
+    # print(len(y_pred))
+
+    cls_names = [item for item in names if item in y_pred]
+    # print(cls_names)
 
     print("#" * 50)
-    print(f"Simple accuracy of data: {count_trues / len_of_dataset}")
-    print(f"count_trues:", count_trues)
-    print(f"count_falses:", count_falses)
+    print(classification_report(y_true, y_pred, target_names=cls_names))
 
     pass
 
