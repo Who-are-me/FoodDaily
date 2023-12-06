@@ -48,16 +48,16 @@ def slave_ai(dataset, names, start_time, processor, model, chunk = 100):
     y_pred = list()
     image_number = 0
 
-    file_true = open('true.csv', 'a+')
-
-    # FIXME check
-    if not os.path.exists('true.csv'):
+    if os.path.exists('true.csv'):
+        file_true = open('true.csv', 'a+')
+    else:
+        file_true = open('true.csv', 'a+')
         file_true.write('item,' + ','.join(str(x) for x in range(chunk)) + '\n')
 
-    file_pred = open('pred.csv', 'a+')
-
-    # FIXME check
-    if not os.path.exists('pred.csv'):
+    if os.path.exists('pred.csv'):
+        file_pred = open('pred.csv', 'a+')
+    else:
+        file_pred = open('pred.csv', 'a+')
         file_pred.write('item,' + ','.join(str(x) for x in range(chunk)) + '\n')
 
     # TODO fix this bad code
@@ -82,7 +82,6 @@ def slave_ai(dataset, names, start_time, processor, model, chunk = 100):
             y_true = []
             y_pred = []
             counter = 1
-            break
         else:
             counter += 1
 
@@ -91,7 +90,7 @@ def slave_ai(dataset, names, start_time, processor, model, chunk = 100):
 
     ptp(st, "complete data")
 
-    return y_true, y_pred
+    return True
 
 
 if __name__ == '__main__':
@@ -120,6 +119,7 @@ if __name__ == '__main__':
         file.write('class,accuracy,precision,recall,f0\n')
 
     slave_ai(dataset['train'], names, st, processor, model, chunk=101)
+    slave_ai(dataset['validation'], names, st, processor, model, chunk=101)
 
     y_true = list()
     y_pred = list()
@@ -133,14 +133,7 @@ if __name__ == '__main__':
     for ind in df_pred.index:
         y_pred.extend(df_pred.iloc[ind, df_pred.columns != 'item'].values.tolist())
 
-    # print(y_true)
-    # print(y_pred)
-    # print("#" * 50)
-    # print(len(y_true))
-    # print(len(y_pred))
-
     cls_names = [item for item in names if item in y_pred]
-    # print(cls_names)
 
     print("#" * 50)
     print(classification_report(y_true, y_pred, target_names=cls_names))
