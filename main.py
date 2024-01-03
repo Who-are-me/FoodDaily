@@ -1,4 +1,4 @@
-from interface_ai import *
+from src.interface_ai import *
 
 
 def preparation_data(dataset, classes: list, processor, model, file_prefix, chunk=100):
