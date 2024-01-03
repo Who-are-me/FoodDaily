@@ -70,7 +70,7 @@ def ai_calculate(classes, image, processor, model):
     ).to(_torch_device)
 
     # get list of result after AI
-    if _torch_device == 'cuda':
+    if str(_torch_device).startswith('cuda'):
         result = model(**inputs).logits_per_image.softmax(dim=1).detach().cpu().numpy().tolist()[0]
     else:
         result = model(**inputs).logits_per_image.softmax(dim=1).detach().numpy().tolist()[0]
