@@ -45,7 +45,7 @@ def get_ai_model(name="openai/clip-vit-base-patch32"):
     return AutoModelForZeroShotImageClassification.from_pretrained(name)
 
 
-def get_classes(name='csv_data/names_of_food.csv', st=0):
+def get_classes(name='data_csv/names_of_food.csv', st=0):
     df_names = pd.read_csv(name)
 
     if st != 0:
