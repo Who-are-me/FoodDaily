@@ -46,7 +46,7 @@ def preparation_data(dataset, classes: list, processor, model, file_prefix, chun
             true = []
             pred = []
             counter = 1
-            exit()
+            # exit()
         else:
             counter += 1
 
