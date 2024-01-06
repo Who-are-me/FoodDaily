@@ -42,7 +42,7 @@ def get_ai_processor(name="openai/clip-vit-base-patch32"):
 
 
 def get_ai_model(name="openai/clip-vit-base-patch32"):
-    return AutoModelForZeroShotImageClassification.from_pretrained(name)
+    return AutoModelForZeroShotImageClassification.from_pretrained(name).to(_torch_device)
 
 
 def get_classes(name='data_csv/names_of_food.csv', st=0):
@@ -60,8 +60,6 @@ def get_classes(name='data_csv/names_of_food.csv', st=0):
 
 
 def ai_calculate(classes, image, processor, model):
-    model.to(_torch_device)
-
     inputs = processor(
         text=classes,
         images=image,
